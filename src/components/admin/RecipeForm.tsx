@@ -1,16 +1,17 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Search } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { Recipe } from '@/hooks/useSupabaseRecipes';
 import { RECIPE_CATEGORIES, RecipeCategory } from '@/lib/categories';
-import { useProducts } from '@/hooks/useProducts';
+import { useSupabaseProducts } from '@/hooks/useSupabaseProducts';
 import { useSupabaseVideos } from '@/hooks/useSupabaseVideos';
+import { useAuth } from '@/contexts/SupabaseAuthContext';
+import FileUploadField from './FileUploadField';
+import { useSupabaseUpload } from '@/hooks/useSupabaseUpload';
 
 interface RecipeFormProps {
   recipe?: Recipe;
@@ -20,20 +21,26 @@ interface RecipeFormProps {
 }
 
 const RecipeForm: React.FC<RecipeFormProps> = ({ recipe, onSubmit, onCancel, isLoading }) => {
-  const { data: products } = useProducts();
+  const { data: products } = useSupabaseProducts();
   const { data: videos } = useSupabaseVideos();
+  const { currentUser } = useAuth();
+  const { uploadFile, uploading, uploadProgress } = useSupabaseUpload();
+  
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState({
     title: recipe?.title || '',
     description: recipe?.description || '',
     image: recipe?.image || '',
     cook_time: recipe?.cook_time || 30,
+    prep_time: recipe?.prep_time || 15,
     servings: recipe?.servings || 4,
     difficulty: recipe?.difficulty || 'Moyen' as const,
     rating: recipe?.rating || 4.0,
     category: recipe?.category || 'Plats traditionnels maliens' as RecipeCategory,
     video_id: recipe?.video_id || '',
-    created_by: recipe?.created_by || ''
+    view_count: recipe?.view_count || 0,
+    created_by: recipe?.created_by || currentUser?.id || ''
   });
 
   const [ingredients, setIngredients] = useState(recipe?.ingredients || [
@@ -42,7 +49,7 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipe, onSubmit, onCancel, isL
 
   const [instructions, setInstructions] = useState(recipe?.instructions || ['']);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const validIngredients = ingredients.filter(ing => 
@@ -54,12 +61,28 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipe, onSubmit, onCancel, isL
       return;
     }
 
-    onSubmit({
+    let imageUrl = formData.image;
+    
+    // Upload image if selected
+    if (selectedImageFile) {
+      const uploadedUrl = await uploadFile(selectedImageFile, 'recette');
+      if (uploadedUrl) {
+        imageUrl = uploadedUrl;
+      }
+    }
+
+    const recipeData = {
       ...formData,
+      image: imageUrl,
+      created_by: recipe?.created_by || currentUser?.id || '',
       ingredients: validIngredients,
       instructions: instructions.filter(inst => inst.trim() !== ''),
-      video_id: formData.video_id || undefined
-    });
+      video_id: formData.video_id || null,
+      prep_time: formData.prep_time,
+      view_count: formData.view_count
+    };
+
+    onSubmit(recipeData);
   };
 
   const addIngredient = () => {
@@ -130,16 +153,16 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipe, onSubmit, onCancel, isL
         />
       </div>
 
-      <div>
-        <Label htmlFor="image">URL de l'image *</Label>
-        <Input
-          id="image"
-          type="url"
-          value={formData.image}
-          onChange={(e) => setFormData({...formData, image: e.target.value})}
-          required
-        />
-      </div>
+      <FileUploadField
+        label="Image de la recette"
+        value={formData.image}
+        onChange={(url) => setFormData({...formData, image: url})}
+        onFileSelect={setSelectedImageFile}
+        acceptedTypes="image/*"
+        uploading={uploading}
+        uploadProgress={uploadProgress}
+        placeholder="https://exemple.com/recette.jpg"
+      />
 
       <div>
         <Label htmlFor="video_id">Vidéo associée (optionnel)</Label>
@@ -157,9 +180,18 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipe, onSubmit, onCancel, isL
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div>
-          <Label htmlFor="cook_time">Temps (min) *</Label>
+          <Label htmlFor="prep_time">Préparation (min)</Label>
+          <Input
+            id="prep_time"
+            type="number"
+            value={formData.prep_time}
+            onChange={(e) => setFormData({...formData, prep_time: parseInt(e.target.value) || 0})}
+          />
+        </div>
+        <div>
+          <Label htmlFor="cook_time">Cuisson (min) *</Label>
           <Input
             id="cook_time"
             type="number"
@@ -290,11 +322,11 @@ const RecipeForm: React.FC<RecipeFormProps> = ({ recipe, onSubmit, onCancel, isL
       </div>
 
       <div className="flex justify-end space-x-4">
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={uploading}>
           Annuler
         </Button>
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Enregistrement...' : (recipe ? 'Modifier' : 'Créer')}
+        <Button type="submit" disabled={isLoading || uploading}>
+          {uploading ? 'Upload en cours...' : isLoading ? 'Enregistrement...' : (recipe ? 'Modifier' : 'Créer')}
         </Button>
       </div>
     </form>

@@ -12,11 +12,13 @@ export type Database = {
       admin_permissions: {
         Row: {
           can_manage_categories: boolean | null
+          can_manage_deliveries: boolean | null
           can_manage_orders: boolean | null
           can_manage_products: boolean | null
           can_manage_recipes: boolean | null
           can_manage_users: boolean | null
           can_manage_videos: boolean | null
+          can_validate_orders: boolean | null
           created_at: string
           id: string
           is_super_admin: boolean | null
@@ -25,11 +27,13 @@ export type Database = {
         }
         Insert: {
           can_manage_categories?: boolean | null
+          can_manage_deliveries?: boolean | null
           can_manage_orders?: boolean | null
           can_manage_products?: boolean | null
           can_manage_recipes?: boolean | null
           can_manage_users?: boolean | null
           can_manage_videos?: boolean | null
+          can_validate_orders?: boolean | null
           created_at?: string
           id?: string
           is_super_admin?: boolean | null
@@ -38,11 +42,13 @@ export type Database = {
         }
         Update: {
           can_manage_categories?: boolean | null
+          can_manage_deliveries?: boolean | null
           can_manage_orders?: boolean | null
           can_manage_products?: boolean | null
           can_manage_recipes?: boolean | null
           can_manage_users?: boolean | null
           can_manage_videos?: boolean | null
+          can_validate_orders?: boolean | null
           created_at?: string
           id?: string
           is_super_admin?: boolean | null
@@ -98,6 +104,83 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      delivery_tracking: {
+        Row: {
+          created_at: string | null
+          delivery_person_id: string
+          id: string
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          order_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_person_id: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          order_id: string
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          delivery_person_id?: string
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          order_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_tracking_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_zones: {
+        Row: {
+          created_at: string | null
+          delivery_fee: number
+          description: string | null
+          id: string
+          is_active: boolean | null
+          max_delivery_time: number | null
+          min_delivery_time: number | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          delivery_fee?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_delivery_time?: number | null
+          min_delivery_time?: number | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          delivery_fee?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_delivery_time?: number | null
+          min_delivery_time?: number | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       favorites: {
         Row: {
@@ -219,30 +302,107 @@ export type Database = {
         }
         Relationships: []
       }
-      orders: {
+      order_items: {
         Row: {
-          created_at: string | null
-          id: string
-          items: Json | null
-          status: string | null
-          total_amount: number | null
-          user_id: string | null
+          created_at: string
+          id: number
+          order_id: string
+          product_id: string
+          quantity: number
         }
         Insert: {
-          created_at?: string | null
-          id?: string
-          items?: Json | null
-          status?: string | null
-          total_amount?: number | null
-          user_id?: string | null
+          created_at?: string
+          id?: never
+          order_id: string
+          product_id: string
+          quantity: number
         }
         Update: {
+          created_at?: string
+          id?: never
+          order_id?: string
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          assigned_at: string | null
+          assigned_to: string | null
+          created_at: string | null
+          delivered_at: string | null
+          delivery_address: Json
+          delivery_fee: number | null
+          delivery_latitude: string | null
+          delivery_longitude: string | null
+          delivery_notes: string | null
+          delivery_zone_id: string | null
+          google_maps_link: string | null
+          id: string
+          items: Json
+          picked_up_at: string | null
+          qr_code: string | null
+          status: string | null
+          total_amount: number
+          updated_at: string | null
+          user_id: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          assigned_at?: string | null
+          assigned_to?: string | null
           created_at?: string | null
+          delivered_at?: string | null
+          delivery_address: Json
+          delivery_fee?: number | null
+          delivery_latitude?: string | null
+          delivery_longitude?: string | null
+          delivery_notes?: string | null
+          delivery_zone_id?: string | null
+          google_maps_link?: string | null
           id?: string
-          items?: Json | null
+          items: Json
+          picked_up_at?: string | null
+          qr_code?: string | null
           status?: string | null
-          total_amount?: number | null
-          user_id?: string | null
+          total_amount: number
+          updated_at?: string | null
+          user_id: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          assigned_at?: string | null
+          assigned_to?: string | null
+          created_at?: string | null
+          delivered_at?: string | null
+          delivery_address?: Json
+          delivery_fee?: number | null
+          delivery_latitude?: string | null
+          delivery_longitude?: string | null
+          delivery_notes?: string | null
+          delivery_zone_id?: string | null
+          google_maps_link?: string | null
+          id?: string
+          items?: Json
+          picked_up_at?: string | null
+          qr_code?: string | null
+          status?: string | null
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string
+          validated_at?: string | null
+          validated_by?: string | null
         }
         Relationships: []
       }
@@ -373,6 +533,7 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          description: string[] | null
           id: string
           image: string | null
           in_stock: boolean | null
@@ -385,6 +546,7 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          description?: string[] | null
           id?: string
           image?: string | null
           in_stock?: boolean | null
@@ -397,6 +559,7 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          description?: string[] | null
           id?: string
           image?: string | null
           in_stock?: boolean | null
@@ -410,32 +573,50 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           created_at: string
+          date_of_birth: string | null
           display_name: string | null
           email: string | null
           id: string
+          location: string | null
+          notification_settings: Json | null
+          phone_number: string | null
           photo_url: string | null
           preferences: Json | null
+          privacy_settings: Json | null
           role: string | null
           updated_at: string
         }
         Insert: {
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           email?: string | null
           id: string
+          location?: string | null
+          notification_settings?: Json | null
+          phone_number?: string | null
           photo_url?: string | null
           preferences?: Json | null
+          privacy_settings?: Json | null
           role?: string | null
           updated_at?: string
         }
         Update: {
+          bio?: string | null
           created_at?: string
+          date_of_birth?: string | null
           display_name?: string | null
           email?: string | null
           id?: string
+          location?: string | null
+          notification_settings?: Json | null
+          phone_number?: string | null
           photo_url?: string | null
           preferences?: Json | null
+          privacy_settings?: Json | null
           role?: string | null
           updated_at?: string
         }
@@ -576,49 +757,55 @@ export type Database = {
           category: string
           cook_time: number
           created_at: string
-          created_by: string
+          created_by: string | null
           description: string | null
           difficulty: string | null
           id: string
           image: string | null
           ingredients: Json
           instructions: string[]
+          prep_time: number | null
           rating: number | null
           servings: number
           title: string
           video_id: string | null
+          view_count: number | null
         }
         Insert: {
           category: string
           cook_time: number
           created_at?: string
-          created_by: string
+          created_by?: string | null
           description?: string | null
           difficulty?: string | null
           id?: string
           image?: string | null
           ingredients: Json
           instructions: string[]
+          prep_time?: number | null
           rating?: number | null
           servings: number
           title: string
           video_id?: string | null
+          view_count?: number | null
         }
         Update: {
           category?: string
           cook_time?: number
           created_at?: string
-          created_by?: string
+          created_by?: string | null
           description?: string | null
           difficulty?: string | null
           id?: string
           image?: string | null
           ingredients?: Json
           instructions?: string[]
+          prep_time?: number | null
           rating?: number | null
           servings?: number
           title?: string
           video_id?: string | null
+          view_count?: number | null
         }
         Relationships: []
       }
@@ -752,6 +939,42 @@ export type Database = {
           },
         ]
       }
+      user_locations: {
+        Row: {
+          address: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          label: string | null
+          latitude: number | null
+          longitude: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          address: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          address?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          label?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_preconfigured_carts: {
         Row: {
           created_at: string
@@ -784,10 +1007,40 @@ export type Database = {
           },
         ]
       }
+      video_likes: {
+        Row: {
+          created_at: string | null
+          id: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_likes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       videos: {
         Row: {
           category: string
           created_at: string
+          created_by: string | null
           description: string | null
           duration: string | null
           id: string
@@ -802,6 +1055,7 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          created_by?: string | null
           description?: string | null
           duration?: string | null
           id?: string
@@ -816,6 +1070,7 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          created_by?: string | null
           description?: string | null
           duration?: string | null
           id?: string
@@ -842,9 +1097,53 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_distance: {
+        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
+        Returns: number
+      }
+      decrement_video_likes: {
+        Args: { video_id: string }
+        Returns: undefined
+      }
+      delete_old_avatar: {
+        Args: { user_id: string }
+        Returns: undefined
+      }
+      find_nearest_delivery_zone: {
+        Args: { lat: number; lon: number }
+        Returns: string
+      }
+      generate_google_maps_link: {
+        Args: { lat: string; lng: string }
+        Returns: string
+      }
+      get_personal_cart_details: {
+        Args: { cart_id: string }
+        Returns: Json
+      }
+      get_preconfigured_cart_details: {
+        Args: { cart_id: string }
+        Returns: Json
+      }
+      get_recipe_cart_details: {
+        Args: { cart_id: string }
+        Returns: Json
+      }
       has_admin_permission: {
         Args: { permission_type: string }
         Returns: boolean
+      }
+      has_delivery_permission: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      has_order_validation_permission: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      increment_recipe_views: {
+        Args: { recipe_uuid: string }
+        Returns: undefined
       }
       increment_video_likes: {
         Args: { video_id: string }
@@ -857,6 +1156,14 @@ export type Database = {
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      is_super_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      update_profile_avatar: {
+        Args: { user_id: string; avatar_url: string }
+        Returns: undefined
       }
     }
     Enums: {

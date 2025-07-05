@@ -10,14 +10,7 @@ import { Search, Plus, Edit, Trash2, Star, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import ProductForm from '@/components/admin/ProductForm';
 import { useSupabaseProducts, useCreateSupabaseProduct, useUpdateSupabaseProduct, useDeleteSupabaseProduct, SupabaseProduct } from '@/hooks/useSupabaseProducts';
-
-// Fonction utilitaire pour formater le prix
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'EUR'
-  }).format(price);
-};
+import { formatPrice } from '@/lib/currency';
 
 const ProductManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -86,7 +79,7 @@ const ProductManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">

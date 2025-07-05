@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,9 +10,7 @@ import {
   Package, 
   ChefHat, 
   Heart,
-  Plus,
-  Minus,
-  Trash2,
+  Settings,
   CreditCard,
   Truck
 } from 'lucide-react';
@@ -20,6 +19,7 @@ import { useMainCart } from '@/hooks/useSupabaseCart';
 import MainCartView from '@/components/cart/MainCartView';
 import PersonalCartView from '@/components/cart/PersonalCartView';
 import RecipeCartsView from '@/components/cart/RecipeCartsView';
+import PreconfiguredCartsView from '@/components/cart/PreconfiguredCartsView';
 
 const Cart = () => {
   const { currentUser } = useAuth();
@@ -37,9 +37,11 @@ const Cart = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
-              Se connecter
-            </Button>
+            <Link to="/login">
+              <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
+                Se connecter
+              </Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -58,26 +60,33 @@ const Cart = () => {
             </h1>
           </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Gérez vos achats et finalisez vos commandes
+            Tous vos paniers sont automatiquement combinés pour votre commande
           </p>
         </div>
 
         {/* Cart Tabs */}
-        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm mb-8">
           <CardContent className="p-6">
             <Tabs defaultValue="main" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-4 mb-6">
                 <TabsTrigger value="main" className="flex items-center space-x-2">
                   <ShoppingCart className="h-4 w-4" />
-                  <span>Panier Principal ({cartItems?.length || 0})</span>
+                  <span className="hidden sm:inline">Principal</span>
+                  <Badge variant="secondary" className="ml-1">
+                    {cartItems?.length || 0}
+                  </Badge>
                 </TabsTrigger>
                 <TabsTrigger value="personal" className="flex items-center space-x-2">
                   <Heart className="h-4 w-4" />
-                  <span>Paniers Personnels</span>
+                  <span className="hidden sm:inline">Personnel</span>
                 </TabsTrigger>
                 <TabsTrigger value="recipes" className="flex items-center space-x-2">
                   <ChefHat className="h-4 w-4" />
-                  <span>Paniers Recettes</span>
+                  <span className="hidden sm:inline">Recettes</span>
+                </TabsTrigger>
+                <TabsTrigger value="preconfigured" className="flex items-center space-x-2">
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Préconfigurés</span>
                 </TabsTrigger>
               </TabsList>
 
@@ -92,21 +101,27 @@ const Cart = () => {
               <TabsContent value="recipes" className="mt-6">
                 <RecipeCartsView />
               </TabsContent>
+
+              <TabsContent value="preconfigured" className="mt-6">
+                <PreconfiguredCartsView />
+              </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
 
         {/* Quick Actions */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card className="hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border-0 bg-white/90 backdrop-blur-sm">
             <CardHeader className="text-center">
               <Package className="h-12 w-12 text-orange-500 mx-auto mb-2" />
               <CardTitle className="text-lg">Continuer les achats</CardTitle>
             </CardHeader>
             <CardContent>
-              <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
-                Voir les produits
-              </Button>
+              <Link to="/produits">
+                <Button className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white">
+                  Voir les produits
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -116,9 +131,11 @@ const Cart = () => {
               <CardTitle className="text-lg">Paniers préconfigurés</CardTitle>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full hover:bg-green-50 border-green-200">
-                Découvrir
-              </Button>
+              <Link to="/paniers-preconfigures">
+                <Button variant="outline" className="w-full hover:bg-green-50 border-green-200">
+                  Découvrir
+                </Button>
+              </Link>
             </CardContent>
           </Card>
 
@@ -140,9 +157,11 @@ const Cart = () => {
               <CardTitle className="text-lg">Suivi commandes</CardTitle>
             </CardHeader>
             <CardContent>
-              <Button variant="outline" className="w-full hover:bg-purple-50 border-purple-200">
-                Voir l'historique
-              </Button>
+              <Link to="/historique-commandes">
+                <Button variant="outline" className="w-full hover:bg-purple-50 border-purple-200">
+                  Voir l'historique
+                </Button>
+              </Link>
             </CardContent>
           </Card>
         </div>

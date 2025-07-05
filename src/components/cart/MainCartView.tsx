@@ -1,175 +1,235 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ShoppingCart, Package, ChefHat, User, CreditCard } from 'lucide-react';
-import { usePersonalCart, useRecipeUserCarts } from '@/hooks/useSupabaseCart';
-import { formatPrice } from '@/lib/firestore';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-
+import { ShoppingCart, Package, Trash2, Plus, Minus, AlertCircle, ArrowRight, ChefHat } from 'lucide-react';
+import { useMainCart } from '@/hooks/useSupabaseCart';
+import { formatCFA, DELIVERY_FEE } from '@/lib/currency';
+import { useToast } from '@/hooks/use-toast';
+import { MainCartItem } from '@/types/cart';
+import SimpleOrderForm from './SimpleOrderForm';
+import OrderSuccess from './OrderSuccess';
 const MainCartView = () => {
-  const { personalCart, personalCartItems } = usePersonalCart();
-  const { recipeCarts } = useRecipeUserCarts();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const personalCartTotal = personalCartItems.reduce((sum, item) => 
-    sum + ((item.products?.price || 0) * item.quantity), 0
-  );
-
-  const recipeCartsTotal = recipeCarts.reduce((sum, cart) => {
-    // On pourrait calculer le total de chaque panier recette ici
-    return sum;
-  }, 0);
-
-  const totalAmount = personalCartTotal + recipeCartsTotal;
-
-  const allCarts = [
-    ...(personalCart && personalCartItems.length > 0 ? [{
-      id: personalCart.id,
-      name: 'Panier Personnel',
-      type: 'personal',
-      itemsCount: personalCartItems.length,
-      total: personalCartTotal,
-      icon: <User className="h-4 w-4" />
-    }] : []),
-    ...recipeCarts.map(cart => ({
-      id: cart.id,
-      name: cart.cart_name,
-      type: 'recipe',
-      itemsCount: 0, // À calculer si nécessaire
-      total: 0, // À calculer si nécessaire
-      icon: <ChefHat className="h-4 w-4" />
-    }))
-  ];
-
-  const handleViewCartDetail = (cartType: string, cartId: string) => {
-    // Mettre à jour les paramètres de recherche pour changer d'onglet
-    const newSearchParams = new URLSearchParams(searchParams);
-    
-    if (cartType === 'personal') {
-      newSearchParams.set('tab', 'personal');
-    } else if (cartType === 'recipe') {
-      newSearchParams.set('tab', 'recipe');
-    }
-    
-    // Naviguer vers la page panier avec le bon onglet
-    navigate(`/panier?${newSearchParams.toString()}`);
-  };
-
-  if (allCarts.length === 0) {
-    return (
-      <Card>
-        <CardContent className="pt-8 pb-8 sm:pt-12 sm:pb-12">
-          <div className="text-center">
-            <ShoppingCart className="h-12 w-12 sm:h-16 sm:w-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Votre panier est vide</h3>
-            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-4">Ajoutez des produits ou créez des paniers recette pour commencer</p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center px-4">
-              <Button 
-                onClick={() => navigate('/produits')}
-                className="bg-orange-500 hover:bg-orange-600 w-full sm:w-auto"
-              >
-                Voir les produits
-              </Button>
-              <Button 
-                onClick={() => navigate('/recettes')}
-                variant="outline"
-                className="w-full sm:w-auto"
-              >
-                Voir les recettes
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  const {
+    cartItems,
+    isLoading
+  } = useMainCart();
+  const {
+    toast
+  } = useToast();
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+  const [completedOrderId, setCompletedOrderId] = useState<string>('');
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+        <span className="ml-2">Chargement du panier...</span>
+      </div>;
   }
-
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      <Card>
-        <CardHeader className="pb-3 sm:pb-6">
-          <CardTitle className="flex items-center text-lg sm:text-xl">
-            <ShoppingCart className="h-5 w-5 mr-2 flex-shrink-0" />
-            <span className="truncate">Mes Paniers ({allCarts.length} panier{allCarts.length > 1 ? 's' : ''})</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 sm:space-y-4">
-          {allCarts.map((cart) => (
-            <div key={cart.id} className="border rounded-lg bg-gray-50 overflow-hidden">
-              <div className="p-3 sm:p-4">
-                <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start sm:items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
-                    <div className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-lg flex-shrink-0">
-                      {cart.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-sm sm:text-base truncate pr-2">{cart.name}</h3>
-                      <div className="flex flex-wrap items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-xs">
-                          {cart.type === 'personal' ? 'Personnel' : 'Recette'}
-                        </Badge>
-                        <span className="text-xs sm:text-sm text-gray-500">
-                          {cart.itemsCount} article{cart.itemsCount > 1 ? 's' : ''}
-                        </span>
-                      </div>
-                      <p className="text-orange-500 font-semibold mt-1 text-sm sm:text-base">
-                        {formatPrice(cart.total)}
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleViewCartDetail(cart.type, cart.id)}
-                    className="w-full sm:w-auto mt-2 sm:mt-0 text-xs sm:text-sm"
-                  >
-                    Voir le détail
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3 sm:pb-6">
-          <CardTitle className="text-lg sm:text-xl">Résumé de commande</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 sm:space-y-4">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm sm:text-base">
-              <span>Sous-total</span>
-              <span className="font-medium">{formatPrice(totalAmount)}</span>
-            </div>
-            <div className="flex justify-between text-sm sm:text-base">
-              <span>Livraison</span>
-              <span className="text-green-600 font-medium">Gratuite</span>
-            </div>
-          </div>
-          
-          <Separator />
-          
-          <div className="flex justify-between font-semibold text-base sm:text-lg">
-            <span>Total</span>
-            <span className="text-orange-500">{formatPrice(totalAmount)}</span>
-          </div>
-
-          <Button 
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white text-sm sm:text-base py-2 sm:py-3"
-            disabled={totalAmount === 0}
-          >
-            <CreditCard className="h-4 w-4 mr-2" />
-            Passer commande ({formatPrice(totalAmount)})
+  if (!cartItems || cartItems.length === 0) {
+    return <Card className="text-center py-12">
+        <CardContent>
+          <ShoppingCart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">Votre panier est vide</h3>
+          <p className="text-gray-500 mb-6">
+            Ajoutez des produits à votre panier pour commencer vos achats
+          </p>
+          <Button onClick={() => window.location.href = '/produits'} className="bg-orange-500 hover:bg-orange-600">
+            <Package className="h-4 w-4 mr-2" />
+            Découvrir nos produits
           </Button>
         </CardContent>
-      </Card>
-    </div>
-  );
-};
+      </Card>;
+  }
 
+  // Calculer le sous-total
+  const subtotal = cartItems.reduce((total, item) => total + (item.total_price || 0), 0);
+  const total = subtotal + DELIVERY_FEE;
+
+  // Grouper les items par type de panier
+  const personalItems = cartItems.filter(item => item.cart_type === 'personal');
+  const recipeItems = cartItems.filter(item => item.cart_type === 'recipe');
+  const preconfiguredItems = cartItems.filter(item => item.cart_type === 'preconfigured');
+
+  // Grouper les items de recettes par panier individuel
+  const recipeCartGroups = recipeItems.reduce((groups, item) => {
+    const cartId = item.cart_id;
+    if (!groups[cartId]) {
+      groups[cartId] = {
+        cartName: item.cart_name,
+        items: []
+      };
+    }
+    groups[cartId].items.push(item);
+    return groups;
+  }, {} as Record<string, {
+    cartName: string;
+    items: MainCartItem[];
+  }>);
+  const handleOrderComplete = (orderId?: string) => {
+    setShowOrderForm(false);
+    setShowOrderSuccess(true);
+    if (orderId) {
+      setCompletedOrderId(orderId);
+    }
+
+    // Actualiser la page après un délai pour s'assurer que les paniers sont vides
+    setTimeout(() => {
+      window.location.reload();
+    }, 2000);
+  };
+  const handleContinueShopping = () => {
+    setShowOrderSuccess(false);
+    window.location.href = '/produits';
+  };
+  if (showOrderSuccess) {
+    return <OrderSuccess orderId={completedOrderId} onContinueShopping={handleContinueShopping} />;
+  }
+  if (showOrderForm) {
+    return <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Finaliser la commande</h2>
+          <Button variant="outline" onClick={() => setShowOrderForm(false)}>
+            Retour au panier
+          </Button>
+        </div>
+        
+        <SimpleOrderForm cartItems={cartItems} subtotal={subtotal} onOrderComplete={handleOrderComplete} />
+      </div>;
+  }
+  return <div className="space-y-6">
+      {/* En-tête du panier */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <ShoppingCart className="h-5 w-5 mr-2" />
+              Panier principal
+            </div>
+            <Badge variant="secondary" className="text-lg px-3 py-1">
+              {cartItems.length} article{cartItems.length > 1 ? 's' : ''}
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+      </Card>
+
+      {/* Items du panier groupés par type */}
+      <div className="space-y-4">
+        {/* Panier personnel */}
+        {personalItems.length > 0 && <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <Package className="h-4 w-4 mr-2 text-blue-500" />
+                Panier Personnel
+                <Badge variant="outline" className="ml-2">
+                  {personalItems.length} article{personalItems.length > 1 ? 's' : ''}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {personalItems.map(item => <div key={`personal-${item.item_id}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <h4 className="font-medium">{item.product_name}</h4>
+                      <p className="text-sm text-gray-600">
+                        {item.quantity} × {formatCFA(item.unit_price)} = {formatCFA(item.total_price)}
+                      </p>
+                    </div>
+                  </div>)}
+              </div>
+            </CardContent>
+          </Card>}
+
+        {/* Paniers recettes - séparés individuellement */}
+        {Object.entries(recipeCartGroups).map(([cartId, cartGroup]) => <Card key={cartId}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <ChefHat className="h-4 w-4 mr-2 text-green-500" />
+                {cartGroup.cartName}
+                <Badge variant="outline" className="ml-2 bg-green-50 text-green-700">
+                  {cartGroup.items.length} article{cartGroup.items.length > 1 ? 's' : ''}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {cartGroup.items.map(item => <div key={`recipe-${item.item_id}`} className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-green-800">{item.product_name}</h4>
+                      <p className="text-sm text-green-600">
+                        {item.quantity} × {formatCFA(item.unit_price)} = {formatCFA(item.total_price)}
+                      </p>
+                    </div>
+                  </div>)}
+                <div className="mt-3 pt-3 border-t border-green-200">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-green-700">Total du panier:</span>
+                    <span className="font-bold text-green-800">
+                      {formatCFA(cartGroup.items.reduce((sum, item) => sum + (item.total_price || 0), 0))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>)}
+
+        {/* Paniers préconfigurés */}
+        {preconfiguredItems.length > 0 && <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center">
+                <Package className="h-4 w-4 mr-2 text-purple-500" />
+                Paniers Préconfigurés
+                <Badge variant="outline" className="ml-2">
+                  {preconfiguredItems.length} panier{preconfiguredItems.length > 1 ? 's' : ''}
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {preconfiguredItems.map(item => <div key={`preconfigured-${item.item_id}`} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex-1">
+                      <h4 className="font-medium text-purple-800">{item.product_name}</h4>
+                      <p className="text-sm text-purple-600">
+                        Panier complet - {formatCFA(item.total_price)}
+                      </p>
+                    </div>
+                  </div>)}
+              </div>
+            </CardContent>
+          </Card>}
+      </div>
+
+      {/* Résumé et commande */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Résumé des prix */}
+            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Sous-total ({cartItems.length} articles)</span>
+                <span>{formatCFA(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span>Frais de livraison</span>
+                <span>{formatCFA(DELIVERY_FEE)}</span>
+              </div>
+              <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                <span>Total</span>
+                <span className="text-orange-500">{formatCFA(total)}</span>
+              </div>
+            </div>
+
+            {/* Informations de livraison */}
+            
+
+            {/* Bouton de commande */}
+            <Button onClick={() => setShowOrderForm(true)} className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 text-lg" size="lg">
+              <ArrowRight className="h-5 w-5 mr-2" />
+              Commander - {formatCFA(total)}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>;
+};
 export default MainCartView;

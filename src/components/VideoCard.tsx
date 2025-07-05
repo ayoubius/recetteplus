@@ -42,7 +42,7 @@ const VideoCard: React.FC<VideoCardProps> = ({
   };
 
   const handleClick = () => {
-    navigate(`/video/${id}`);
+    navigate(`/videos/${id}`);
   };
 
   return (
@@ -61,7 +61,6 @@ const VideoCard: React.FC<VideoCardProps> = ({
           itemId={id}
           type="video"
           className="absolute top-2 right-2 bg-white/90 hover:bg-white shadow-sm"
-          onClick={(e) => e.stopPropagation()}
         />
         <div className="absolute top-2 left-2">
           <Badge variant="secondary" className="bg-white/90 text-gray-800">

@@ -78,7 +78,7 @@ const Favorites = () => {
   if (!currentUser) {
     return (
       <>
-        <Header />
+   
         <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 flex items-center justify-center">
           <Card className="w-full max-w-md shadow-xl border-0 bg-white/95 backdrop-blur-sm">
             <CardHeader className="text-center">
@@ -102,7 +102,7 @@ const Favorites = () => {
   if (favoritesLoading) {
     return (
       <>
-        <Header />
+        
         <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100 flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-orange-500" />
@@ -115,7 +115,7 @@ const Favorites = () => {
 
   return (
     <>
-      <Header />
+      
       <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
