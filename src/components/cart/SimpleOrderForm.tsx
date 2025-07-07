@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Package, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/SupabaseAuthContext';
 import { formatCFA, DELIVERY_FEE } from '@/lib/currency';
@@ -26,6 +26,7 @@ const SimpleOrderForm: React.FC<SimpleOrderFormProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [notes, setNotes] = useState('');
@@ -111,6 +112,17 @@ const SimpleOrderForm: React.FC<SimpleOrderFormProps> = ({
     }
   };
 
+  const invalidateCartQueries = () => {
+    // Invalider toutes les requêtes liées aux paniers
+    queryClient.invalidateQueries({ queryKey: ['main-cart'] });
+    queryClient.invalidateQueries({ queryKey: ['personal-cart'] });
+    queryClient.invalidateQueries({ queryKey: ['personal-cart-items'] });
+    queryClient.invalidateQueries({ queryKey: ['recipe-user-carts'] });
+    queryClient.invalidateQueries({ queryKey: ['user-preconfigured-carts'] });
+    
+    console.log('Requêtes de panier invalidées pour actualisation');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -186,7 +198,11 @@ const SimpleOrderForm: React.FC<SimpleOrderFormProps> = ({
           .eq('id', order.id);
       }
 
+      // Nettoyer les paniers
       await clearAllCarts();
+
+      // Invalider les requêtes pour actualiser les données
+      invalidateCartQueries();
 
       toast({
         title: "Commande créée avec succès !",
@@ -194,7 +210,10 @@ const SimpleOrderForm: React.FC<SimpleOrderFormProps> = ({
         duration: 5000
       });
 
-      onOrderComplete();
+      // Appeler onOrderComplete après un court délai pour laisser le temps aux requêtes de s'actualiser
+      setTimeout(() => {
+        onOrderComplete();
+      }, 500);
       
     } catch (error) {
       console.error('Erreur lors de la création de la commande:', error);
