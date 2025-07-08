@@ -158,39 +158,7 @@ const About = () => {
         </div>
 
         {/* Story Section */}
-        <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
-          <CardHeader>
-            <CardTitle className="text-4xl font-bold text-center text-gray-900 mb-4">Notre Histoire</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-              <div className="space-y-6">
-                <p className="text-lg text-gray-600 leading-relaxed">
-                  Fondé en 2024 à Bamako, Recette+ est né de la vision d'une équipe passionnée 
-                  de technologues et chefs maliens. Nous avons identifié un besoin crucial : 
-                  faciliter l'accès aux traditions culinaires maliennes pour les familles 
-                  dispersées dans le monde.
-                </p>
-                <p className="text-lg text-gray-600 leading-relaxed">
-                  Notre plateforme répond aux défis modernes : difficulté d'accès aux ingrédients 
-                  authentiques, transmission des savoir-faire culinaires, et maintien des liens 
-                  culturels malgré la distance géographique.
-                </p>
-                <p className="text-lg text-gray-600 leading-relaxed">
-                  Aujourd'hui, Recette+ rassemble une communauté grandissante d'amoureux de la 
-                  cuisine malienne, unis par la passion du partage et de l'authenticité.
-                </p>
-              </div>
-              <div className="flex justify-center">
-                <img 
-                  src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=500&h=400&fit=crop" 
-                  alt="Cuisine malienne traditionnelle" 
-                  className="rounded-2xl shadow-2xl w-full max-w-md hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+       
 
         {/* Team Section - Using Database Data */}
         <div>
